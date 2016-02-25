@@ -1170,17 +1170,17 @@ QueryNode EdgeBasedGraphFactory::getRepresentativeCoordinate(const NodeID src,
             for (auto itr = geometry.rbegin(), end = geometry.rend(); itr != end; ++itr)
             {
                 const auto compressed_node = *itr;
-                cur = util::FixedPointCoordinate(m_node_info_list[compressed_node.first].lat,
-                                                 m_node_info_list[compressed_node.first].lon);
+                cur = util::FixedPointCoordinate(m_node_info_list[compressed_node.node_id].lat,
+                                                 m_node_info_list[compressed_node.node_id].lon);
                 this_dist = util::coordinate_calculation::haversineDistance(prev, cur);
                 if (dist + this_dist > DESIRED_SEGMENT_LENGTH)
                 {
-                    return selectBestCandidate(compressed_node.first, dist + this_dist, prev_id,
+                    return selectBestCandidate(compressed_node.node_id, dist + this_dist, prev_id,
                                                dist);
                 }
                 dist += this_dist;
                 prev = cur;
-                prev_id = compressed_node.first;
+                prev_id = compressed_node.node_id;
             }
             cur = util::FixedPointCoordinate(m_node_info_list[src].lat, m_node_info_list[src].lon);
             this_dist = util::coordinate_calculation::haversineDistance(prev, cur);
@@ -1191,17 +1191,17 @@ QueryNode EdgeBasedGraphFactory::getRepresentativeCoordinate(const NodeID src,
             for (auto itr = geometry.begin(), end = geometry.end(); itr != end; ++itr)
             {
                 const auto compressed_node = *itr;
-                cur = util::FixedPointCoordinate(m_node_info_list[compressed_node.first].lat,
-                                                 m_node_info_list[compressed_node.first].lon);
+                cur = util::FixedPointCoordinate(m_node_info_list[compressed_node.node_id].lat,
+                                                 m_node_info_list[compressed_node.node_id].lon);
                 this_dist = util::coordinate_calculation::haversineDistance(prev, cur);
                 if (dist + this_dist > DESIRED_SEGMENT_LENGTH)
                 {
-                    return selectBestCandidate(compressed_node.first, dist + this_dist, prev_id,
+                    return selectBestCandidate(compressed_node.node_id, dist + this_dist, prev_id,
                                                dist);
                 }
                 dist += this_dist;
                 prev = cur;
-                prev_id = compressed_node.first;
+                prev_id = compressed_node.node_id;
             }
             cur = util::FixedPointCoordinate(m_node_info_list[tgt].lat, m_node_info_list[tgt].lon);
             this_dist = util::coordinate_calculation::haversineDistance(prev, cur);
