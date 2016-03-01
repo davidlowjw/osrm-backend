@@ -70,7 +70,6 @@ inline NodeBasedEdge::NodeBasedEdge()
       backward(false), roundabout(false), access_restricted(false), startpoint(true),
       is_split(false), travel_mode(false)
 {
-    road_classification.invalidate();
 }
 
 inline NodeBasedEdge::NodeBasedEdge(NodeID source,

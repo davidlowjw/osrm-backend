@@ -1,12 +1,11 @@
 #ifndef OSRM_GUIDANCE_CLASSIFICATION_DATA_HPP_
 #define OSRM_GUIDANCE_CLASSIFICATION_DATA_HPP_
 
+#include "util/simple_logger.hpp"
+
 #include <string>
 #include <unordered_map>
 
-#include <iostream> //TODO remove
-
-#include "util/simple_logger.hpp"
 
 // Forward Declaration to allow usage of external osmium::Way
 namespace osmium
@@ -21,8 +20,9 @@ namespace engine
 namespace guidance
 {
 
-enum FunctionalRoadClass
+enum class FunctionalRoadClass : short
 {
+    UNKNOWN = 0,
     MOTORWAY,
     MOTORWAY_LINK,
     TRUNK,
@@ -37,8 +37,7 @@ enum FunctionalRoadClass
     RESIDENTIAL,
     SERVICE,
     LIVING_STREET,
-    LOW_PRIORITY_ROAD, // a road simply included for connectivity. Should be avoided at all cost
-    UNKNOWN
+    LOW_PRIORITY_ROAD // a road simply included for connectivity. Should be avoided at all cost
 };
 
 inline FunctionalRoadClass functionalRoadClassFromTag(std::string const &value)
@@ -84,7 +83,7 @@ inline FunctionalRoadClass functionalRoadClassFromTag(std::string const &value)
 inline bool isRampClass(const FunctionalRoadClass road_class)
 {
     // Primary Roads and down are usually too small to announce their links as ramps
-    return road_class == MOTORWAY_LINK || road_class == TRUNK_LINK;
+    return road_class == FunctionalRoadClass::MOTORWAY_LINK || road_class == FunctionalRoadClass::TRUNK_LINK;
     //|| road_class == PRIMARY_LINK ||
     //   road_class == SECONDARY_LINK || road_class == TERTIARY_LINK;
 }
@@ -94,20 +93,10 @@ inline bool isRampClass(const FunctionalRoadClass road_class)
 const constexpr unsigned INVALID_FEATURE_ID = 0;
 struct RoadClassificationData
 {
-    FunctionalRoadClass road_class;
-    unsigned feature_id;
+    FunctionalRoadClass road_class = FunctionalRoadClass::UNKNOWN;
+    unsigned feature_id = INVALID_FEATURE_ID;
 
     void augment(const osmium::Way &way);
-
-    // reset to a defined but invalid state
-    void invalidate();
-
-    static RoadClassificationData INVALID()
-    {
-        RoadClassificationData tmp;
-        tmp.invalidate();
-        return tmp;
-    };
 };
 
 inline bool operator==( const RoadClassificationData lhs, const RoadClassificationData rhs )

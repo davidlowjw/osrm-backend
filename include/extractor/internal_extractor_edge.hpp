@@ -52,7 +52,7 @@ struct InternalExtractorEdge
                  true,
                  TRAVEL_MODE_INACCESSIBLE,
                  false,
-                 engine::guidance::RoadClassificationData::INVALID())
+                 engine::guidance::RoadClassificationData())
     {
     }
 
@@ -96,13 +96,13 @@ struct InternalExtractorEdge
     {
         return InternalExtractorEdge(MIN_OSM_NODEID, MIN_OSM_NODEID, 0, WeightData(), false, false,
                                      false, false, true, TRAVEL_MODE_INACCESSIBLE, false,
-                                     engine::guidance::RoadClassificationData::INVALID());
+                                     engine::guidance::RoadClassificationData());
     }
     static InternalExtractorEdge max_osm_value()
     {
         return InternalExtractorEdge(MAX_OSM_NODEID, MAX_OSM_NODEID, 0, WeightData(), false, false,
                                      false, false, true, TRAVEL_MODE_INACCESSIBLE, false,
-                                     engine::guidance::RoadClassificationData::INVALID());
+                                     engine::guidance::RoadClassificationData());
     }
 
     static InternalExtractorEdge min_internal_value()
