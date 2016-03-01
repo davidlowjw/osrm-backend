@@ -90,9 +90,12 @@ inline bool isRampClass(const FunctionalRoadClass road_class)
 }
 
 // TODO augment this with all data required for guidance generation
+// TODO built a feature ID structure to keep features
+const constexpr unsigned INVALID_FEATURE_ID = 0;
 struct RoadClassificationData
 {
     FunctionalRoadClass road_class;
+    unsigned feature_id;
 
     void augment(const osmium::Way &way);
 

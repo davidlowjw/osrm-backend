@@ -162,7 +162,8 @@ void EdgeBasedGraphFactory::InsertEdgeBasedNode(const NodeID node_u, const NodeI
             // build edges
             m_edge_based_node_list.emplace_back(
                 forward_data.edge_id, reverse_data.edge_id, current_edge_source_coordinate_id,
-                current_edge_target_coordinate_id, forward_data.name_id, forward_geometry[i].second,
+                current_edge_target_coordinate_id, forward_data.name_id,
+                forward_data.road_classification.feature_id, forward_geometry[i].second,
                 reverse_geometry[geometry_size - 1 - i].second, forward_dist_prefix_sum[i],
                 reverse_dist_prefix_sum[i], m_compressed_edge_container.GetPositionForID(edge_id_1),
                 false, INVALID_COMPONENTID, i, forward_data.travel_mode, reverse_data.travel_mode);
@@ -210,8 +211,9 @@ void EdgeBasedGraphFactory::InsertEdgeBasedNode(const NodeID node_u, const NodeI
 
         m_edge_based_node_list.emplace_back(
             forward_data.edge_id, reverse_data.edge_id, node_u, node_v, forward_data.name_id,
-            forward_data.distance, reverse_data.distance, 0, 0, SPECIAL_EDGEID, false,
-            INVALID_COMPONENTID, 0, forward_data.travel_mode, reverse_data.travel_mode);
+            forward_data.road_classification.feature_id, forward_data.distance,
+            reverse_data.distance, 0, 0, SPECIAL_EDGEID, false, INVALID_COMPONENTID, 0,
+            forward_data.travel_mode, reverse_data.travel_mode);
         m_edge_based_node_is_startpoint.push_back(forward_data.startpoint ||
                                                   reverse_data.startpoint);
         BOOST_ASSERT(!m_edge_based_node_list.back().IsCompressed());
@@ -462,8 +464,9 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
             }
 
             ++node_based_edge_counter;
-            auto turn_candidates = turn_analysis::getTurns(node_u, edge_from_u, m_node_based_graph, m_node_info_list, m_restriction_map, m_barrier_nodes,
-                    m_compressed_edge_container);
+            auto turn_candidates = turn_analysis::getTurns(
+                node_u, edge_from_u, m_node_based_graph, m_node_info_list, m_restriction_map,
+                m_barrier_nodes, m_compressed_edge_container);
 
             const NodeID node_v = m_node_based_graph->GetTarget(edge_from_u);
 
