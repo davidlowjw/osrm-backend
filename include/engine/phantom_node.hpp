@@ -94,17 +94,17 @@ struct PhantomNode
     bool operator==(const PhantomNode &other) const { return location == other.location; }
 
     template <class OtherT>
-    PhantomNode(const OtherT &other, const util::FixedPointCoordinate foot_point)
+    PhantomNode(const OtherT &other, int forward_weight_, int forward_offset_, int reverse_weight_, int reverse_offset_, const util::FixedPointCoordinate foot_point)
     {
         forward_node_id = other.forward_edge_based_node_id;
         reverse_node_id = other.reverse_edge_based_node_id;
         name_id = other.name_id;
 
-        forward_weight = other.forward_weight;
-        reverse_weight = other.reverse_weight;
+        forward_weight = forward_weight_;
+        reverse_weight = reverse_weight_;
 
-        forward_offset = other.forward_offset;
-        reverse_offset = other.reverse_offset;
+        forward_offset = forward_offset_;
+        reverse_offset = reverse_offset_;
 
         forward_packed_geometry_id = other.forward_packed_geometry_id;
         reverse_packed_geometry_id = other.reverse_packed_geometry_id;

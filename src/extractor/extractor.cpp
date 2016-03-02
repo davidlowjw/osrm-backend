@@ -532,6 +532,9 @@ Extractor::BuildEdgeExpandedGraph(std::vector<QueryNode> &internal_to_external_n
 #endif
                                  );
 
+    // Note: this needs to be done *after* the edge-based-graph-factory runs,
+    // becase it will insert all the uncompressable segments into the compressed
+    // edge container (necessary for later use)
     compressed_edge_container.SerializeInternalVector(config.geometry_output_path);
 
     lua_close(lua_state);

@@ -144,68 +144,66 @@ template <typename RTreeT, typename DataFacadeT> class GeospatialQuery
                 coordinates->at(data.u), coordinates->at(data.v), input_coordinate,
                 point_on_segment, ratio);
 
-        auto transformed = PhantomNodeWithDistance{PhantomNode{data, point_on_segment},
-                                                   current_perpendicular_distance};
-
         // Find the node-based-edge that this belongs to, and directly
         // calculate the forward_weight, forward_offset, reverse_weight, reverse_offset
 
         int forward_offset = 0, forward_weight = 0;
         int reverse_offset = 0, reverse_weight = 0;
 
-        if (transformed.phantom_node.forward_packed_geometry_id != SPECIAL_EDGEID) {
+        if (data.forward_packed_geometry_id != SPECIAL_EDGEID) {
             std::vector<EdgeWeight> forward_weight_vector;
-            datafacade.GetUncompressedWeights(transformed.phantom_node.forward_packed_geometry_id,
+            datafacade.GetUncompressedWeights(data.forward_packed_geometry_id,
                                             forward_weight_vector);
-            for (std::size_t i = 0; i < transformed.phantom_node.fwd_segment_position; i++)
+            for (std::size_t i = 0; i < data.fwd_segment_position; i++)
             {
                 forward_offset += forward_weight_vector[i];
             }
-            forward_weight = forward_weight_vector[transformed.phantom_node.fwd_segment_position];
+            forward_weight = forward_weight_vector[data.fwd_segment_position];
         }
 
-        if (transformed.phantom_node.reverse_packed_geometry_id != SPECIAL_EDGEID) {
+        if (data.reverse_packed_geometry_id != SPECIAL_EDGEID) {
             std::vector<EdgeWeight> reverse_weight_vector;
-            datafacade.GetUncompressedWeights(transformed.phantom_node.reverse_packed_geometry_id,
+            datafacade.GetUncompressedWeights(data.reverse_packed_geometry_id,
                                               reverse_weight_vector);
 
             //BOOST_ASSERT(reverse_weight_vector.size() == forward_weight_vector.size());
-            BOOST_ASSERT(transformed.phantom_node.fwd_segment_position < reverse_weight_vector.size());
+            BOOST_ASSERT(data.fwd_segment_position < reverse_weight_vector.size());
 
-            for (std::size_t i = 0; i < reverse_weight_vector.size() - transformed.phantom_node.fwd_segment_position - 1; i++)
+            for (std::size_t i = 0; i < reverse_weight_vector.size() - data.fwd_segment_position - 1; i++)
             {
                 reverse_offset += reverse_weight_vector[i];
             }
             reverse_weight = reverse_weight_vector[reverse_weight_vector.size() -
-                                                   transformed.phantom_node.fwd_segment_position - 1];
+                                                   data.fwd_segment_position - 1];
         }
 
-        util::SimpleLogger().Write() << "WAS: fw: " << transformed.phantom_node.forward_weight
-                             << " fo: " << transformed.phantom_node.forward_offset
-                             << " rw: " << transformed.phantom_node.reverse_weight
-                             << " ro: " << transformed.phantom_node.reverse_offset;
+        /*
+        util::SimpleLogger().Write() << "WAS: fw: " << data.forward_weight
+                             << " fo: " << data.forward_offset
+                             << " rw: " << data.reverse_weight
+                             << " ro: " << data.reverse_offset;
         util::SimpleLogger().Write() << "NOW: fw: " << forward_weight
                              << " fo: " << forward_offset
                              << " rw: " << reverse_weight
                              << " ro: " << reverse_offset;
 
-        BOOST_ASSERT(transformed.phantom_node.forward_weight == forward_weight);
-        BOOST_ASSERT(transformed.phantom_node.forward_offset == forward_offset);
-        BOOST_ASSERT(transformed.phantom_node.reverse_weight == reverse_weight);
-        BOOST_ASSERT(transformed.phantom_node.reverse_offset == reverse_offset);
-
-        transformed.phantom_node.forward_weight = forward_weight;
-        transformed.phantom_node.reverse_weight = reverse_weight;
-        transformed.phantom_node.forward_offset = forward_offset;
-        transformed.phantom_node.reverse_offset = reverse_offset;
+        BOOST_ASSERT(data.forward_weight == forward_weight);
+        BOOST_ASSERT(data.forward_offset == forward_offset);
+        BOOST_ASSERT(data.reverse_weight == reverse_weight);
+        BOOST_ASSERT(data.reverse_offset == reverse_offset);
+        */
 
         ratio = std::min(1.0, std::max(0.0, ratio));
-        if (SPECIAL_NODEID != transformed.phantom_node.forward_node_id) {
-            transformed.phantom_node.forward_weight *= ratio;
+        if (SPECIAL_NODEID != data.forward_edge_based_node_id) {
+            forward_weight *= ratio;
         }
-        if (SPECIAL_NODEID != transformed.phantom_node.reverse_node_id) {
-            transformed.phantom_node.reverse_weight *= 1.0 - ratio;
+        if (SPECIAL_NODEID != data.reverse_edge_based_node_id) {
+            reverse_weight *= 1.0 - ratio;
         }
+
+        auto transformed = PhantomNodeWithDistance{PhantomNode{data, forward_weight, forward_offset,
+            reverse_weight, reverse_offset, point_on_segment},
+                                                   current_perpendicular_distance};
 
         return transformed;
     }

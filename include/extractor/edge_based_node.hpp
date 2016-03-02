@@ -22,8 +22,6 @@ struct EdgeBasedNode
     EdgeBasedNode()
         : forward_edge_based_node_id(SPECIAL_NODEID), reverse_edge_based_node_id(SPECIAL_NODEID),
           u(SPECIAL_NODEID), v(SPECIAL_NODEID), name_id(0),
-          forward_weight(INVALID_EDGE_WEIGHT), reverse_weight(INVALID_EDGE_WEIGHT),
-          forward_offset(0), reverse_offset(0),
           forward_packed_geometry_id(SPECIAL_EDGEID),
           reverse_packed_geometry_id(SPECIAL_EDGEID),
           component{INVALID_COMPONENTID, false},
@@ -38,10 +36,6 @@ struct EdgeBasedNode
                            NodeID u,
                            NodeID v,
                            unsigned name_id,
-                           int forward_weight,
-                           int reverse_weight,
-                           int forward_offset,
-                           int reverse_offset,
                            unsigned forward_weight_or_packed_geometry_id_,
                            unsigned reverse_weight_or_packed_geometry_id_,
                            bool is_tiny_component,
@@ -51,8 +45,6 @@ struct EdgeBasedNode
                            TravelMode backward_travel_mode)
         : forward_edge_based_node_id(forward_edge_based_node_id),
           reverse_edge_based_node_id(reverse_edge_based_node_id), u(u), v(v), name_id(name_id),
-          forward_weight(forward_weight), reverse_weight(reverse_weight),
-          forward_offset(forward_offset), reverse_offset(reverse_offset),
           forward_packed_geometry_id(forward_weight_or_packed_geometry_id_),
           reverse_packed_geometry_id(reverse_weight_or_packed_geometry_id_),
           component{component_id, is_tiny_component},
@@ -78,10 +70,6 @@ struct EdgeBasedNode
     NodeID u;                          // indices into the coordinates array
     NodeID v;                          // indices into the coordinates array
     unsigned name_id;                  // id of the edge name
-    int forward_weight;                // weight of the edge
-    int reverse_weight;                // weight in the other direction (may be different)
-    int forward_offset;          // prefix sum of the weight up the edge TODO: short must suffice
-    int reverse_offset;          // prefix sum of the weight from the edge TODO: short must suffice
 
     unsigned forward_packed_geometry_id;
     unsigned reverse_packed_geometry_id;
