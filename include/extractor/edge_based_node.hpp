@@ -22,11 +22,10 @@ struct EdgeBasedNode
     EdgeBasedNode()
         : forward_edge_based_node_id(SPECIAL_NODEID), reverse_edge_based_node_id(SPECIAL_NODEID),
           u(SPECIAL_NODEID), v(SPECIAL_NODEID), name_id(0),
-          forward_weight(INVALID_EDGE_WEIGHT >> 1), reverse_weight(INVALID_EDGE_WEIGHT >> 1),
+          forward_weight(INVALID_EDGE_WEIGHT), reverse_weight(INVALID_EDGE_WEIGHT),
           forward_offset(0), reverse_offset(0),
-          is_packed(false),
-          forward_weight_or_packed_geometry_id(SPECIAL_EDGEID >> 1),
-          reverse_weight_or_packed_geometry_id(SPECIAL_EDGEID >> 1),
+          forward_packed_geometry_id(SPECIAL_EDGEID),
+          reverse_packed_geometry_id(SPECIAL_EDGEID),
           component{INVALID_COMPONENTID, false},
           fwd_segment_position(std::numeric_limits<unsigned short>::max()),
           forward_travel_mode(TRAVEL_MODE_INACCESSIBLE),
@@ -43,7 +42,6 @@ struct EdgeBasedNode
                            int reverse_weight,
                            int forward_offset,
                            int reverse_offset,
-                           bool is_packed_,
                            unsigned forward_weight_or_packed_geometry_id_,
                            unsigned reverse_weight_or_packed_geometry_id_,
                            bool is_tiny_component,
@@ -55,9 +53,8 @@ struct EdgeBasedNode
           reverse_edge_based_node_id(reverse_edge_based_node_id), u(u), v(v), name_id(name_id),
           forward_weight(forward_weight), reverse_weight(reverse_weight),
           forward_offset(forward_offset), reverse_offset(reverse_offset),
-          is_packed(is_packed_),
-          forward_weight_or_packed_geometry_id(forward_weight_or_packed_geometry_id_),
-          reverse_weight_or_packed_geometry_id(reverse_weight_or_packed_geometry_id_),
+          forward_packed_geometry_id(forward_weight_or_packed_geometry_id_),
+          reverse_packed_geometry_id(reverse_weight_or_packed_geometry_id_),
           component{component_id, is_tiny_component},
           fwd_segment_position(fwd_segment_position), forward_travel_mode(forward_travel_mode),
           backward_travel_mode(backward_travel_mode)
@@ -76,8 +73,6 @@ struct EdgeBasedNode
         return centroid;
     }
 
-    bool IsCompressed() const { return is_packed; }
-
     NodeID forward_edge_based_node_id; // needed for edge-expanded graph
     NodeID reverse_edge_based_node_id; // needed for edge-expanded graph
     NodeID u;                          // indices into the coordinates array
@@ -88,12 +83,8 @@ struct EdgeBasedNode
     int forward_offset;          // prefix sum of the weight up the edge TODO: short must suffice
     int reverse_offset;          // prefix sum of the weight from the edge TODO: short must suffice
 
-    // If is_packed is true, then the forward/reverse values contain
-    // packed geometry ids.  If false, then the values contain the
-    // edge weight
-    bool is_packed : 1;
-    unsigned forward_weight_or_packed_geometry_id : 31;
-    unsigned reverse_weight_or_packed_geometry_id : 31;
+    unsigned forward_packed_geometry_id;
+    unsigned reverse_packed_geometry_id;
     struct
     {
         unsigned id : 31;

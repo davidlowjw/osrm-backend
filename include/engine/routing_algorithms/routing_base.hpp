@@ -331,7 +331,7 @@ template <class DataFacadeT, class Derived> class BasicRoutingInterface
                     for (std::size_t i = start_index; i < end_index; ++i)
                     {
                         unpacked_path.emplace_back(id_vector[i], name_index,
-                                                   extractor::TurnInstruction::NoTurn, (i==start_index?0:weight_vector[i-1]),
+                                                   extractor::TurnInstruction::NoTurn, weight_vector[i],
                                                    travel_mode);
                     }
                     unpacked_path.back().turn_instruction = turn_instruction;
@@ -339,51 +339,49 @@ template <class DataFacadeT, class Derived> class BasicRoutingInterface
                 }
             }
         }
-        if (phantom_node_pair.target_phantom.is_packed)
+        std::vector<unsigned> id_vector;
+        facade->GetUncompressedGeometry(phantom_node_pair.target_phantom.forward_packed_geometry_id,
+                                        id_vector);
+        const bool is_local_path = (phantom_node_pair.source_phantom.forward_packed_geometry_id ==
+                                    phantom_node_pair.target_phantom.forward_packed_geometry_id) &&
+                                    unpacked_path.empty();
+
+        std::cout << "Got id vector of size " << id_vector.size() << "\n";
+
+        std::size_t start_index = 0;
+        if (is_local_path)
         {
-            std::vector<unsigned> id_vector;
-            facade->GetUncompressedGeometry(phantom_node_pair.target_phantom.forward_weight_or_packed_geometry_id,
-                                            id_vector);
-            const bool is_local_path = (phantom_node_pair.source_phantom.forward_weight_or_packed_geometry_id ==
-                                        phantom_node_pair.target_phantom.forward_weight_or_packed_geometry_id) &&
-                                        phantom_node_pair.source_phantom.is_packed &&
-                                        unpacked_path.empty();
-
-            std::size_t start_index = 0;
-            if (is_local_path)
-            {
-                start_index = phantom_node_pair.source_phantom.fwd_segment_position;
-                if (target_traversed_in_reverse)
-                {
-                    start_index =
-                        id_vector.size() - phantom_node_pair.source_phantom.fwd_segment_position;
-                }
-            }
-
-            std::size_t end_index = phantom_node_pair.target_phantom.fwd_segment_position;
+            start_index = phantom_node_pair.source_phantom.fwd_segment_position;
             if (target_traversed_in_reverse)
             {
-                std::reverse(id_vector.begin(), id_vector.end());
-                end_index =
-                    id_vector.size() - phantom_node_pair.target_phantom.fwd_segment_position;
+                start_index =
+                    id_vector.size() - phantom_node_pair.source_phantom.fwd_segment_position;
             }
+        }
 
-            if (start_index > end_index)
-            {
-                start_index = std::min(start_index, id_vector.size() - 1);
-            }
+        std::size_t end_index = phantom_node_pair.target_phantom.fwd_segment_position;
+        if (target_traversed_in_reverse)
+        {
+            std::reverse(id_vector.begin(), id_vector.end());
+            end_index =
+                id_vector.size() - phantom_node_pair.target_phantom.fwd_segment_position;
+        }
 
-            for (std::size_t i = start_index; i != end_index; (start_index < end_index ? ++i : --i))
-            {
-                BOOST_ASSERT(i < id_vector.size());
-                BOOST_ASSERT(phantom_node_pair.target_phantom.forward_travel_mode > 0);
-                unpacked_path.emplace_back(
-                    PathData{id_vector[i], phantom_node_pair.target_phantom.name_id,
-                             extractor::TurnInstruction::NoTurn, 0,
-                             target_traversed_in_reverse
-                                 ? phantom_node_pair.target_phantom.backward_travel_mode
-                                 : phantom_node_pair.target_phantom.forward_travel_mode});
-            }
+        if (start_index > end_index)
+        {
+            start_index = std::min(start_index, id_vector.size() - 1);
+        }
+
+        for (std::size_t i = start_index; i != end_index; (start_index < end_index ? ++i : --i))
+        {
+            BOOST_ASSERT(i < id_vector.size());
+            BOOST_ASSERT(phantom_node_pair.target_phantom.forward_travel_mode > 0);
+            unpacked_path.emplace_back(
+                PathData{id_vector[i], phantom_node_pair.target_phantom.name_id,
+                         extractor::TurnInstruction::NoTurn, 0,
+                         target_traversed_in_reverse
+                             ? phantom_node_pair.target_phantom.backward_travel_mode
+                             : phantom_node_pair.target_phantom.forward_travel_mode});
         }
 
         // there is no equivalent to a node-based node in an edge-expanded graph.

@@ -32,6 +32,10 @@ class CompressedEdgeContainer
                       const EdgeWeight weight1,
                       const EdgeWeight weight2);
 
+    void AddUncompressedEdge(const EdgeID edgei_id, 
+                             const NodeID target_node,
+                             const EdgeWeight weight);
+
     bool HasEntryForID(const EdgeID edge_id) const;
     void PrintStatistics() const;
     void SerializeInternalVector(const std::string &path) const;

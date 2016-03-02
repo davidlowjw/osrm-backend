@@ -522,7 +522,6 @@ Extractor::BuildEdgeExpandedGraph(std::vector<QueryNode> &internal_to_external_n
         std::const_pointer_cast<RestrictionMap const>(restriction_map),
         internal_to_external_node_map, speed_profile);
 
-    compressed_edge_container.SerializeInternalVector(config.geometry_output_path);
 
     edge_based_graph_factory.Run(config.edge_output_path, lua_state,
                                  config.edge_segment_lookup_path, config.edge_penalty_path,
@@ -532,6 +531,9 @@ Extractor::BuildEdgeExpandedGraph(std::vector<QueryNode> &internal_to_external_n
                                  config.debug_turns_path
 #endif
                                  );
+
+    compressed_edge_container.SerializeInternalVector(config.geometry_output_path);
+
     lua_close(lua_state);
 
     edge_based_graph_factory.GetEdgeBasedEdges(edge_based_edge_list);

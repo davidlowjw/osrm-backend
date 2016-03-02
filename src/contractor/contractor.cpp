@@ -242,19 +242,17 @@ std::size_t Contractor::LoadEdgeExpandedGraph(
             geometry_stream.close();
         }
 
-        // Then, update all the leaf nodes in the StaticRTree
+        // Now, we iterate over all the segments stored in the StaticRTree, updating
+        // the packed geometry weights in the `.geometries` file (note: we do not
+        // update the RTree itself, we just use the leaf nodes to iterate over all segments)
         {
 
             using LeafNode = util::StaticRTree<extractor::EdgeBasedNode>::LeafNode;
 
             // Open file for reading *and* writing
-            std::fstream leaf_node_file(rtree_leaf_filename, std::ios::binary | std::ios::in | std::ios::out );
+            std::ifstream leaf_node_file(rtree_leaf_filename, std::ios::binary | std::ios::in);
             uint64_t m_element_count;
             leaf_node_file.read((char *)&m_element_count, sizeof(uint64_t));
-
-            // Set the write position to the same position as the read position,
-            // so now we can start reading/writing LeafNodes
-            leaf_node_file.seekp(leaf_node_file.tellg());
 
             LeafNode current_node;
             while (m_element_count > 0)
@@ -265,102 +263,68 @@ std::size_t Contractor::LoadEdgeExpandedGraph(
                 {
                     auto & leaf_object = current_node.objects[i];
 
-                    if (leaf_object.is_packed) 
+                    if (leaf_object.forward_packed_geometry_id != SPECIAL_EDGEID)
                     {
-                        if (leaf_object.forward_weight_or_packed_geometry_id != (SPECIAL_EDGEID >> 1))
+                        const unsigned forward_begin = m_geometry_indices.at(leaf_object.forward_packed_geometry_id);
+
+                        extractor::QueryNode *u;
+                        extractor::QueryNode *v;
+                        if (leaf_object.fwd_segment_position == 0)
                         {
-                            const unsigned forward_begin = m_geometry_indices.at(leaf_object.forward_weight_or_packed_geometry_id);
-    
-                            extractor::QueryNode *u;
-                            extractor::QueryNode *v;
-                            if (leaf_object.fwd_segment_position == 0)
-                            {
-                                u = &(internal_to_external_node_map[leaf_object.u]);
-                                v = &(internal_to_external_node_map[m_geometry_list[forward_begin].node_id]);
-                            }
-                            else
-                            {
-                                u = &(internal_to_external_node_map[m_geometry_list[forward_begin + leaf_object.fwd_segment_position].node_id]);
-                                v = &(internal_to_external_node_map[m_geometry_list[forward_begin + leaf_object.fwd_segment_position + 1].node_id]);
-                            }
-                            const double segment_length =
-                                    util::coordinate_calculation::greatCircleDistance(
-                                            u->lat, u->lon, v->lat, v->lon);
-
-                            auto forward_speed_iter = segment_speed_lookup.find(std::make_pair(u->node_id, v->node_id));
-                            if (forward_speed_iter != segment_speed_lookup.end())
-                            {
-                                int new_segment_weight =
-                                    std::max(1, static_cast<int>(std::floor(
-                                                (segment_length * 10.) / (forward_speed_iter->second / 3.6) + .5)));
-                                m_geometry_list[forward_begin + leaf_object.fwd_segment_position].weight = new_segment_weight;
-                            }
+                            u = &(internal_to_external_node_map[leaf_object.u]);
+                            v = &(internal_to_external_node_map[m_geometry_list[forward_begin].node_id]);
                         }
-                        if (leaf_object.reverse_weight_or_packed_geometry_id != (SPECIAL_EDGEID >> 1))
+                        else
                         {
-                            const unsigned reverse_begin = m_geometry_indices.at(leaf_object.reverse_weight_or_packed_geometry_id);
-                            const unsigned reverse_end = m_geometry_indices.at(leaf_object.reverse_weight_or_packed_geometry_id + 1);
-    
-                            extractor::QueryNode *u;
-                            extractor::QueryNode *v;
-                            if (leaf_object.fwd_segment_position == (reverse_end - reverse_begin))
-                            {
-                                u = &(internal_to_external_node_map[leaf_object.v]);
-                                v = &(internal_to_external_node_map[m_geometry_list[reverse_begin].node_id]);
-                            }
-                            else
-                            {
-                                u = &(internal_to_external_node_map[m_geometry_list[reverse_begin + (reverse_end - reverse_begin) - leaf_object.fwd_segment_position - 1].node_id]);
-                                v = &(internal_to_external_node_map[m_geometry_list[reverse_begin + (reverse_end - reverse_begin) - leaf_object.fwd_segment_position - 1 + 1].node_id]);
-                            }
-                            const double segment_length =
-                                    util::coordinate_calculation::greatCircleDistance(
-                                            u->lat, u->lon, v->lat, v->lon);
-
-                            auto reverse_speed_iter = segment_speed_lookup.find(std::make_pair(u->node_id, v->node_id));
-                            if (reverse_speed_iter != segment_speed_lookup.end())
-                            {
-                                int new_segment_weight =
-                                    std::max(1, static_cast<int>(std::floor(
-                                                (segment_length * 10.) / (reverse_speed_iter->second / 3.6) + .5)));
-                                m_geometry_list[reverse_begin + (reverse_end - reverse_begin) - leaf_object.fwd_segment_position - 1].weight = new_segment_weight;
-                            }
+                            u = &(internal_to_external_node_map[m_geometry_list[forward_begin + leaf_object.fwd_segment_position].node_id]);
+                            v = &(internal_to_external_node_map[m_geometry_list[forward_begin + leaf_object.fwd_segment_position + 1].node_id]);
                         }
-
-                    }
-                    else
-                    {
-                        extractor::QueryNode u = internal_to_external_node_map[leaf_object.u];
-                        extractor::QueryNode v = internal_to_external_node_map[leaf_object.v];
-    
                         const double segment_length =
                                 util::coordinate_calculation::greatCircleDistance(
-                                        u.lat, u.lon, v.lat, v.lon);
-    
-                        auto forward_speed_iter = segment_speed_lookup.find(std::make_pair(u.node_id, v.node_id));
+                                        u->lat, u->lon, v->lat, v->lon);
+
+                        auto forward_speed_iter = segment_speed_lookup.find(std::make_pair(u->node_id, v->node_id));
                         if (forward_speed_iter != segment_speed_lookup.end())
                         {
                             int new_segment_weight =
                                 std::max(1, static_cast<int>(std::floor(
                                             (segment_length * 10.) / (forward_speed_iter->second / 3.6) + .5)));
-                            leaf_object.forward_weight_or_packed_geometry_id = new_segment_weight;
+                            m_geometry_list[forward_begin + leaf_object.fwd_segment_position].weight = new_segment_weight;
                         }
-    
-                        auto reverse_speed_iter = segment_speed_lookup.find(std::make_pair(v.node_id, u.node_id));
+                    }
+                    if (leaf_object.reverse_packed_geometry_id != SPECIAL_EDGEID)
+                    {
+                        const unsigned reverse_begin = m_geometry_indices.at(leaf_object.reverse_packed_geometry_id);
+                        const unsigned reverse_end = m_geometry_indices.at(leaf_object.reverse_packed_geometry_id + 1);
+
+                        extractor::QueryNode *u;
+                        extractor::QueryNode *v;
+                        if (leaf_object.fwd_segment_position == (reverse_end - reverse_begin))
+                        {
+                            u = &(internal_to_external_node_map[leaf_object.v]);
+                            v = &(internal_to_external_node_map[m_geometry_list[reverse_begin].node_id]);
+                        }
+                        else
+                        {
+                            u = &(internal_to_external_node_map[m_geometry_list[reverse_begin + (reverse_end - reverse_begin) - leaf_object.fwd_segment_position - 1].node_id]);
+                            v = &(internal_to_external_node_map[m_geometry_list[reverse_begin + (reverse_end - reverse_begin) - leaf_object.fwd_segment_position - 1 + 1].node_id]);
+                        }
+                        const double segment_length =
+                                util::coordinate_calculation::greatCircleDistance(
+                                        u->lat, u->lon, v->lat, v->lon);
+
+                        auto reverse_speed_iter = segment_speed_lookup.find(std::make_pair(u->node_id, v->node_id));
                         if (reverse_speed_iter != segment_speed_lookup.end())
                         {
                             int new_segment_weight =
                                 std::max(1, static_cast<int>(std::floor(
                                             (segment_length * 10.) / (reverse_speed_iter->second / 3.6) + .5)));
-                            leaf_object.reverse_weight_or_packed_geometry_id = new_segment_weight;
+                            m_geometry_list[reverse_begin + (reverse_end - reverse_begin) - leaf_object.fwd_segment_position - 1].weight = new_segment_weight;
                         }
                     }
                 }
                 m_element_count -= current_node.object_count;
-                leaf_node_file.write(reinterpret_cast<char *>(&current_node), sizeof(current_node));
 
-                // Make sure both file position pointers are progressing together
-                BOOST_ASSERT(leaf_node_file.tellg() == leaf_node_file.tellp());
             }
             leaf_node_file.close();
 

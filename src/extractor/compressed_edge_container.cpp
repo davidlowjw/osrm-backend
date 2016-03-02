@@ -39,6 +39,7 @@ bool CompressedEdgeContainer::HasEntryForID(const EdgeID edge_id) const
 
 unsigned CompressedEdgeContainer::GetPositionForID(const EdgeID edge_id) const
 {
+    util::SimpleLogger().Write() << "Getting posistion for ID " << edge_id;
     auto map_iterator = m_edge_id_to_list_index_map.find(edge_id);
     BOOST_ASSERT(map_iterator != m_edge_id_to_list_index_map.end());
     BOOST_ASSERT(map_iterator->second < m_compressed_geometries.size());
@@ -179,6 +180,54 @@ void CompressedEdgeContainer::CompressEdge(const EdgeID edge_id_1,
         edge_bucket_list1.emplace_back( CompressedEdge { target_node_id, weight2 });
     }
 }
+
+void CompressedEdgeContainer::AddUncompressedEdge(const EdgeID edge_id, 
+                                                  const NodeID target_node_id,
+                                                  const EdgeWeight weight)
+{
+    util::SimpleLogger().Write() << "Compressing short edge " << edge_id << " with target " << target_node_id << " and weight " << weight;
+    // remove super-trivial geometries
+    BOOST_ASSERT(SPECIAL_EDGEID != edge_id);
+    BOOST_ASSERT(SPECIAL_NODEID != target_node_id);
+    BOOST_ASSERT(INVALID_EDGE_WEIGHT != weight);
+
+    // There should be no entry for uncompressed edges
+    BOOST_ASSERT(!HasEntryForID(edge_id));
+
+    // Add via node id. List is created if it does not exist
+    if (!HasEntryForID(edge_id))
+    {
+        // create a new entry in the map
+        if (0 == m_free_list.size())
+        {
+            // make sure there is a place to put the entries
+            IncreaseFreeList();
+        }
+        BOOST_ASSERT(!m_free_list.empty());
+        m_edge_id_to_list_index_map[edge_id] = m_free_list.back();
+        m_free_list.pop_back();
+    }
+
+    // find bucket index
+    const auto iter = m_edge_id_to_list_index_map.find(edge_id);
+    BOOST_ASSERT(iter != m_edge_id_to_list_index_map.end());
+    const unsigned edge_bucket_id = iter->second;
+    BOOST_ASSERT(edge_bucket_id == GetPositionForID(edge_id));
+    BOOST_ASSERT(edge_bucket_id < m_compressed_geometries.size());
+
+    std::vector<CompressedEdge> &edge_bucket_list = m_compressed_geometries[edge_bucket_id];
+
+    // We're adding uncompressed edges, there should be no entry
+    BOOST_ASSERT(edge_bucket_list.empty());
+    // note we don't save the start coordinate: it is implicitly given by edge_id
+    // weight is the distance to the (currently) last coordinate in the bucket
+    if (edge_bucket_list.empty())
+    {
+        edge_bucket_list.emplace_back(CompressedEdge { target_node_id, weight });
+    }
+}
+
+
 
 void CompressedEdgeContainer::PrintStatistics() const
 {

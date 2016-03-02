@@ -47,7 +47,7 @@ const double constexpr DESIRED_SEGMENT_LENGTH = 10.;
 
 EdgeBasedGraphFactory::EdgeBasedGraphFactory(
     std::shared_ptr<util::NodeBasedDynamicGraph> node_based_graph,
-    const CompressedEdgeContainer &compressed_edge_container,
+    CompressedEdgeContainer &compressed_edge_container,
     const std::unordered_set<NodeID> &barrier_nodes,
     const std::unordered_set<NodeID> &traffic_lights,
     std::shared_ptr<const RestrictionMap> restriction_map,
@@ -179,7 +179,6 @@ void EdgeBasedGraphFactory::InsertEdgeBasedNode(const NodeID node_u, const NodeI
                 current_edge_target_coordinate_id, forward_data.name_id, forward_geometry[i].weight,
                 reverse_geometry[geometry_size - 1 - i].weight, forward_offsets[i],
                 reverse_offsets[i],
-                true,
                 m_compressed_edge_container.GetPositionForID(edge_id_1),
                 m_compressed_edge_container.GetPositionForID(edge_id_2),
                 false, INVALID_COMPONENTID, i, forward_data.travel_mode, reverse_data.travel_mode);
@@ -187,8 +186,6 @@ void EdgeBasedGraphFactory::InsertEdgeBasedNode(const NodeID node_u, const NodeI
             m_edge_based_node_is_startpoint.push_back(forward_data.startpoint ||
                                                       reverse_data.startpoint);
             current_edge_source_coordinate_id = current_edge_target_coordinate_id;
-
-            BOOST_ASSERT(m_edge_based_node_list.back().IsCompressed());
 
             BOOST_ASSERT(node_u != m_edge_based_node_list.back().u ||
                          node_v != m_edge_based_node_list.back().v);
@@ -198,7 +195,6 @@ void EdgeBasedGraphFactory::InsertEdgeBasedNode(const NodeID node_u, const NodeI
         }
 
         BOOST_ASSERT(current_edge_source_coordinate_id == node_v);
-        BOOST_ASSERT(m_edge_based_node_list.back().IsCompressed());
     }
     else
     {
@@ -225,14 +221,17 @@ void EdgeBasedGraphFactory::InsertEdgeBasedNode(const NodeID node_u, const NodeI
         BOOST_ASSERT(forward_data.edge_id != SPECIAL_NODEID ||
                      reverse_data.edge_id != SPECIAL_NODEID);
 
+        m_compressed_edge_container.AddUncompressedEdge(edge_id_1, node_v, forward_data.distance);
+        m_compressed_edge_container.AddUncompressedEdge(edge_id_2, node_u, reverse_data.distance);
+
         m_edge_based_node_list.emplace_back(
             forward_data.edge_id, reverse_data.edge_id, node_u, node_v, forward_data.name_id,
             forward_data.distance, reverse_data.distance, 0, 0,
-            false, forward_data.distance, reverse_data.distance,
+            m_compressed_edge_container.GetPositionForID(edge_id_1),
+            m_compressed_edge_container.GetPositionForID(edge_id_2),
             false, INVALID_COMPONENTID, 0, forward_data.travel_mode, reverse_data.travel_mode);
         m_edge_based_node_is_startpoint.push_back(forward_data.startpoint ||
                                                   reverse_data.startpoint);
-        BOOST_ASSERT(!m_edge_based_node_list.back().IsCompressed());
     }
 }
 
